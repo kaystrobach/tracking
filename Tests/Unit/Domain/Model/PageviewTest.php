@@ -214,26 +214,4 @@ class PageviewTest extends TestCase
             $subject->getUid()
         );
     }
-
-    /**
-     * @test
-     */
-    public function returnsOperatingSystem(): void
-    {
-        $language = $this->prophesize(SiteLanguage::class);
-
-        $subject = new Pageview(
-            0,
-            $language->reveal(),
-            new \DateTimeImmutable(),
-            0,
-            '',
-            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.116 Safari/537.36'
-        );
-
-        static::assertSame(
-            'Linux',
-            $subject->getOperatingSystem()
-        );
-    }
 }

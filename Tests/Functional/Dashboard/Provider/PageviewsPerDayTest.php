@@ -21,6 +21,8 @@ namespace DanielSiepmann\Tracking\Tests\Functional\Dashboard\Provider;
  * 02110-1301, USA.
  */
 
+use DanielSiepmann\Tracking\Dashboard\Provider\Demand;
+use DanielSiepmann\Tracking\Dashboard\Provider\Demand\Tag;
 use DanielSiepmann\Tracking\Dashboard\Provider\PageviewsPerDay;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Localization\LanguageService;
@@ -51,7 +53,8 @@ class PageviewsPerDayTest extends TestCase
 
         $subject = new PageviewsPerDay(
             GeneralUtility::makeInstance(LanguageService::class),
-            GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview')
+            GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
+            new Demand()
         );
 
         $result = $subject->getChartData();
@@ -76,7 +79,7 @@ class PageviewsPerDayTest extends TestCase
         $subject = new PageviewsPerDay(
             GeneralUtility::makeInstance(LanguageService::class),
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
-            3
+            new Demand(3)
         );
 
         $result = $subject->getChartData();
@@ -106,8 +109,7 @@ class PageviewsPerDayTest extends TestCase
         $subject = new PageviewsPerDay(
             GeneralUtility::makeInstance(LanguageService::class),
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
-            3,
-            [2]
+            new Demand(3, 0, [2])
         );
 
         $result = $subject->getChartData();
@@ -131,9 +133,7 @@ class PageviewsPerDayTest extends TestCase
         $subject = new PageviewsPerDay(
             GeneralUtility::makeInstance(LanguageService::class),
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
-            1,
-            [],
-            [],
+            new Demand(1, 0, [], []),
             'd.m.Y'
         );
 
@@ -162,9 +162,7 @@ class PageviewsPerDayTest extends TestCase
         $subject = new PageviewsPerDay(
             GeneralUtility::makeInstance(LanguageService::class),
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
-            11,
-            [],
-            [1]
+            new Demand(11, 0, [], [1])
         );
 
         $result = $subject->getChartData();
@@ -181,6 +179,142 @@ class PageviewsPerDayTest extends TestCase
             9 => 0,
             10 => 1,
             11 => 0,
+        ], $result['datasets'][0]['data']);
+    }
+
+    /**
+     * @test
+     */
+    public function respectedConfiguredTagRuleToNotIncludeBots(): void
+    {
+        $connection = $this->getConnectionPool()->getConnectionForTable('tx_tracking_pageview');
+        for ($i = 1; $i <= 10; $i++) {
+            $connection->insert('tx_tracking_pageview', [
+                'pid' => $i,
+                'uid' => $i,
+                'crdate' => strtotime('-' . $i . ' days'),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'pid' => $i,
+                'record_uid' => $i,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'bot',
+                'value' => 'no',
+                'crdate' => strtotime('-' . $i . ' days'),
+            ]);
+            $connection->insert('tx_tracking_pageview', [
+                'pid' => $i,
+                'uid' => $i * 20,
+                'crdate' => strtotime('-' . $i . ' days'),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'pid' => $i,
+                'record_uid' => $i * 20,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'bot',
+                'value' => 'no',
+                'crdate' => strtotime('-' . $i . ' days'),
+            ]);
+
+            $connection->insert('tx_tracking_pageview', [
+                'pid' => $i,
+                'uid' => $i * 300,
+                'crdate' => strtotime('-' . $i . ' days'),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'pid' => $i,
+                'record_uid' => $i * 300,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'bot',
+                'value' => 'yes',
+                'crdate' => strtotime('-' . $i . ' days'),
+            ]);
+        }
+
+        $subject = new PageviewsPerDay(
+            GeneralUtility::makeInstance(LanguageService::class),
+            GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
+            new Demand(2, 0, [], [], [
+                Tag::createFromArray([
+                    'name' => 'bot',
+                    'value' => 'no',
+                ]),
+            ])
+        );
+
+        $result = $subject->getChartData();
+        static::assertSame([
+            0 => 2,
+            1 => 2,
+            2 => 0,
+        ], $result['datasets'][0]['data']);
+    }
+
+    /**
+     * @test
+     */
+    public function respectedConfiguredTagRuleToIncludeBots(): void
+    {
+        $connection = $this->getConnectionPool()->getConnectionForTable('tx_tracking_pageview');
+        for ($i = 1; $i <= 10; $i++) {
+            $connection->insert('tx_tracking_pageview', [
+                'pid' => $i,
+                'uid' => $i,
+                'crdate' => strtotime('-' . $i . ' days'),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'pid' => $i,
+                'record_uid' => $i,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'bot',
+                'value' => 'no',
+                'crdate' => strtotime('-' . $i . ' days'),
+            ]);
+            $connection->insert('tx_tracking_pageview', [
+                'pid' => $i,
+                'uid' => $i * 20,
+                'crdate' => strtotime('-' . $i . ' days'),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'pid' => $i,
+                'record_uid' => $i * 20,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'bot',
+                'value' => 'no',
+                'crdate' => strtotime('-' . $i . ' days'),
+            ]);
+
+            $connection->insert('tx_tracking_pageview', [
+                'pid' => $i,
+                'uid' => $i * 300,
+                'crdate' => strtotime('-' . $i . ' days'),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'pid' => $i,
+                'record_uid' => $i * 300,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'bot',
+                'value' => 'yes',
+                'crdate' => strtotime('-' . $i . ' days'),
+            ]);
+        }
+
+        $subject = new PageviewsPerDay(
+            GeneralUtility::makeInstance(LanguageService::class),
+            GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
+            new Demand(2, 0, [], [], [
+                Tag::createFromArray([
+                    'name' => 'bot',
+                    'value' => 'yes',
+                ]),
+            ])
+        );
+
+        $result = $subject->getChartData();
+        static::assertSame([
+            0 => 1,
+            1 => 1,
+            2 => 0,
         ], $result['datasets'][0]['data']);
     }
 }

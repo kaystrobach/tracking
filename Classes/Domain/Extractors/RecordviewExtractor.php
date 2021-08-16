@@ -1,6 +1,8 @@
 <?php
 
-namespace DanielSiepmann\Tracking;
+namespace DanielSiepmann\Tracking\Domain\Extractors;
+
+use DanielSiepmann\Tracking\Domain\Model\Recordview;
 
 /*
  * Copyright (C) 2020 Daniel Siepmann <coding@daniel-siepmann.de>
@@ -21,19 +23,13 @@ namespace DanielSiepmann\Tracking;
  * 02110-1301, USA.
  */
 
-final class Extension
+/**
+ * API to extract further info out of an model.
+ */
+interface RecordviewExtractor
 {
-    public const EXT_KEY = 'tracking';
-
-    public const LANGUAGE_PATH = 'LLL:EXT:' . self::EXT_KEY . '/Resources/Private/Language/locallang.xlf';
-
-    public static function getCompatibleVersionNow(): string
-    {
-        return 'v2.0.0';
-    }
-
-    public static function getMaximumRowsForUpdate(): int
-    {
-        return 3500;
-    }
+    /**
+     * @return Tag[]
+     */
+    public function extractTagFromRecordview(Recordview $recordview): array;
 }

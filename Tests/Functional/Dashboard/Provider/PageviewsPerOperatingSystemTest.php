@@ -21,10 +21,12 @@ namespace DanielSiepmann\Tracking\Tests\Functional\Dashboard\Provider;
  * 02110-1301, USA.
  */
 
+use DanielSiepmann\Tracking\Dashboard\Provider\Demand;
 use DanielSiepmann\Tracking\Dashboard\Provider\PageviewsPerOperatingSystem;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase as TestCase;
+
 
 /**
  * @covers DanielSiepmann\Tracking\Dashboard\Provider\PageviewsPerOperatingSystem
@@ -41,16 +43,32 @@ class PageviewsPerOperatingSystemTest extends TestCase
     public function listsSixResultsForLast31DaysByDefault(): void
     {
         $connection = $this->getConnectionPool()->getConnectionForTable('tx_tracking_pageview');
+            $connection->insert('tx_tracking_pageview', [
+                'pid' => 1,
+                'crdate' => time(),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'record_uid' => 1,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'os',
+                'value' => 'System ' . 1,
+            ]);
         for ($i = 1; $i <= 10; $i++) {
             $connection->insert('tx_tracking_pageview', [
                 'pid' => $i,
-                'operating_system' => 'System ' . $i,
                 'crdate' => time(),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'record_uid' => $i,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'os',
+                'value' => 'System ' . $i,
             ]);
         }
 
         $subject = new PageviewsPerOperatingSystem(
-            GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview')
+            GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
+            new Demand()
         );
 
         $result = $subject->getChartData();
@@ -62,7 +80,14 @@ class PageviewsPerOperatingSystemTest extends TestCase
             'System 4',
             'System 5',
         ], $result['labels']);
-        static::assertCount(6, $result['datasets'][0]['data']);
+        static::assertSame([
+            '2',
+            '1',
+            '1',
+            '1',
+            '1',
+            '1',
+        ], $result['datasets'][0]['data']);
     }
 
     /**
@@ -74,27 +99,48 @@ class PageviewsPerOperatingSystemTest extends TestCase
         $connection = $this->getConnectionPool()->getConnectionForTable('tx_tracking_pageview');
         $connection->insert('tx_tracking_pageview', [
             'pid' => 1,
-            'operating_system' => 'System 1',
             'crdate' => time(),
+        ]);
+        $connection->insert('tx_tracking_tag', [
+            'record_uid' => '1',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'os',
+            'value' => 'System 1',
         ]);
         $connection->insert('tx_tracking_pageview', [
             'pid' => 2,
-            'operating_system' => 'System 2',
             'crdate' => time(),
+        ]);
+        $connection->insert('tx_tracking_tag', [
+            'record_uid' => '2',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'os',
+            'value' => 'System 2',
         ]);
         $connection->insert('tx_tracking_pageview', [
             'pid' => 3,
-            'operating_system' => 'System 3',
             'crdate' => time(),
         ]);
+        $connection->insert('tx_tracking_tag', [
+            'record_uid' => '3',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'os',
+            'value' => 'System 3',
+        ]);
         $connection->insert('tx_tracking_pageview', [
-            'pid' => 2,
-            'operating_system' => 'System 2',
+            'pid' => 3,
             'crdate' => time(),
+        ]);
+        $connection->insert('tx_tracking_tag', [
+            'record_uid' => '4',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'os',
+            'value' => 'System 2',
         ]);
 
         $subject = new PageviewsPerOperatingSystem(
-            GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview')
+            GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
+            new Demand()
         );
 
         $result = $subject->getChartData();
@@ -103,7 +149,11 @@ class PageviewsPerOperatingSystemTest extends TestCase
             'System 1',
             'System 3',
         ], $result['labels']);
-        static::assertCount(3, $result['datasets'][0]['data']);
+        static::assertSame([
+            '2',
+            '1',
+            '1',
+        ], $result['datasets'][0]['data']);
     }
 
     /**
@@ -115,23 +165,38 @@ class PageviewsPerOperatingSystemTest extends TestCase
         $connection = $this->getConnectionPool()->getConnectionForTable('tx_tracking_pageview');
         $connection->insert('tx_tracking_pageview', [
             'pid' => 1,
-            'operating_system' => 'System 1',
             'crdate' => strtotime('-3 days'),
+        ]);
+        $connection->insert('tx_tracking_tag', [
+            'record_uid' => '1',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'os',
+            'value' => 'System 1',
         ]);
         $connection->insert('tx_tracking_pageview', [
             'pid' => 2,
-            'operating_system' => 'System 2',
             'crdate' => strtotime('-2 days'),
+        ]);
+        $connection->insert('tx_tracking_tag', [
+            'record_uid' => '2',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'os',
+            'value' => 'System 2',
         ]);
         $connection->insert('tx_tracking_pageview', [
             'pid' => 3,
-            'operating_system' => 'System 3',
             'crdate' => strtotime('-1 days'),
+        ]);
+        $connection->insert('tx_tracking_tag', [
+            'record_uid' => '3',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'os',
+            'value' => 'System 3',
         ]);
 
         $subject = new PageviewsPerOperatingSystem(
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
-            2
+            new Demand(2)
         );
 
         $result = $subject->getChartData();
@@ -139,7 +204,10 @@ class PageviewsPerOperatingSystemTest extends TestCase
             'System 2',
             'System 3',
         ], $result['labels']);
-        static::assertCount(2, $result['datasets'][0]['data']);
+        static::assertSame([
+            '1',
+            '1',
+        ], $result['datasets'][0]['data']);
     }
 
     /**
@@ -152,15 +220,19 @@ class PageviewsPerOperatingSystemTest extends TestCase
         for ($i = 1; $i <= 10; $i++) {
             $connection->insert('tx_tracking_pageview', [
                 'pid' => $i,
-                'operating_system' => 'System ' . $i,
                 'crdate' => time(),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'record_uid' => $i,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'os',
+                'value' => 'System ' . $i,
             ]);
         }
 
         $subject = new PageviewsPerOperatingSystem(
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
-            31,
-            4
+            new Demand(31, 4)
         );
 
         $result = $subject->getChartData();
@@ -170,7 +242,12 @@ class PageviewsPerOperatingSystemTest extends TestCase
             'System 2',
             'System 3',
         ], $result['labels']);
-        static::assertCount(4, $result['datasets'][0]['data']);
+        static::assertSame([
+            '1',
+            '1',
+            '1',
+            '1',
+        ], $result['datasets'][0]['data']);
     }
 
     /**
@@ -184,16 +261,19 @@ class PageviewsPerOperatingSystemTest extends TestCase
             $connection->insert('tx_tracking_pageview', [
                 'pid' => $i,
                 'sys_language_uid' => $i % 2,
-                'operating_system' => 'System ' . $i,
                 'crdate' => time(),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'record_uid' => $i,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'os',
+                'value' => 'System ' . $i,
             ]);
         }
 
         $subject = new PageviewsPerOperatingSystem(
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
-            31,
-            6,
-            [1]
+            new Demand(31, 6, [], [1])
         );
 
         $result = $subject->getChartData();
@@ -204,6 +284,14 @@ class PageviewsPerOperatingSystemTest extends TestCase
             'System 7',
             'System 9',
         ], $result['labels']);
-        static::assertCount(5, $result['datasets'][0]['data']);
+        static::assertSame([
+            '1',
+            '1',
+            '1',
+            '1',
+            '1',
+        ], $result['datasets'][0]['data']);
     }
+
+    // TODO: Add tests for new feature regarding tags
 }

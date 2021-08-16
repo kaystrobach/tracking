@@ -21,6 +21,7 @@ namespace DanielSiepmann\Tracking\Tests\Functional\Dashboard\Provider;
  * 02110-1301, USA.
  */
 
+use DanielSiepmann\Tracking\Dashboard\Provider\Demand;
 use DanielSiepmann\Tracking\Dashboard\Provider\Recordviews;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -53,7 +54,8 @@ class RecordviewsTest extends TestCase
 
         $subject = new Recordviews(
             GeneralUtility::makeInstance(PageRepository::class),
-            $this->getConnectionPool()->getQueryBuilderForTable('tx_tracking_recordview')
+            $connectionPool->getQueryBuilderForTable('tx_tracking_recordview'),
+            new Demand()
         );
 
         $result = $subject->getChartData();
@@ -102,8 +104,8 @@ class RecordviewsTest extends TestCase
 
         $subject = new Recordviews(
             GeneralUtility::makeInstance(PageRepository::class),
-            $this->getConnectionPool()->getQueryBuilderForTable('tx_tracking_recordview'),
-            2
+            $connectionPool->getQueryBuilderForTable('tx_tracking_recordview'),
+            new Demand(2)
         );
 
         $result = $subject->getChartData();
@@ -143,8 +145,8 @@ class RecordviewsTest extends TestCase
 
         $subject = new Recordviews(
             GeneralUtility::makeInstance(PageRepository::class),
-            $this->getConnectionPool()->getQueryBuilderForTable('tx_tracking_recordview'),
-            2
+            $connectionPool->getQueryBuilderForTable('tx_tracking_recordview'),
+            new Demand(2)
         );
 
         $result = $subject->getChartData();
@@ -173,9 +175,8 @@ class RecordviewsTest extends TestCase
 
         $subject = new Recordviews(
             GeneralUtility::makeInstance(PageRepository::class),
-            $this->getConnectionPool()->getQueryBuilderForTable('tx_tracking_recordview'),
-            31,
-            2
+            $connectionPool->getQueryBuilderForTable('tx_tracking_recordview'),
+            new Demand(31, 2)
         );
 
         $result = $subject->getChartData();
@@ -205,10 +206,8 @@ class RecordviewsTest extends TestCase
 
         $subject = new Recordviews(
             GeneralUtility::makeInstance(PageRepository::class),
-            $this->getConnectionPool()->getQueryBuilderForTable('tx_tracking_recordview'),
-            31,
-            6,
-            [1, 2, 3, 4, 5]
+            $connectionPool->getQueryBuilderForTable('tx_tracking_recordview'),
+            new Demand(31, 6, [1, 2, 3, 4, 5])
         );
 
         $result = $subject->getChartData();
@@ -246,11 +245,8 @@ class RecordviewsTest extends TestCase
 
         $subject = new Recordviews(
             GeneralUtility::makeInstance(PageRepository::class),
-            $this->getConnectionPool()->getQueryBuilderForTable('tx_tracking_recordview'),
-            31,
-            6,
-            [],
-            [],
+            $connectionPool->getQueryBuilderForTable('tx_tracking_recordview'),
+            new Demand(31, 6),
             ['sys_category']
         );
 
@@ -285,11 +281,8 @@ class RecordviewsTest extends TestCase
 
         $subject = new Recordviews(
             GeneralUtility::makeInstance(PageRepository::class),
-            $this->getConnectionPool()->getQueryBuilderForTable('tx_tracking_recordview'),
-            31,
-            6,
-            [],
-            [],
+            $connectionPool->getQueryBuilderForTable('tx_tracking_recordview'),
+            new Demand(31, 6),
             [],
             ['1', 2]
         );
@@ -333,13 +326,8 @@ class RecordviewsTest extends TestCase
 
         $subject = new Recordviews(
             GeneralUtility::makeInstance(PageRepository::class),
-            $this->getConnectionPool()->getQueryBuilderForTable('tx_tracking_recordview'),
-            31,
-            6,
-            [],
-            [1],
-            [],
-            []
+            $connectionPool->getQueryBuilderForTable('tx_tracking_recordview'),
+            new Demand(31, 6, [], [1])
         );
 
         $result = $subject->getChartData();
@@ -381,13 +369,8 @@ class RecordviewsTest extends TestCase
 
         $subject = new Recordviews(
             GeneralUtility::makeInstance(PageRepository::class),
-            $this->getConnectionPool()->getQueryBuilderForTable('tx_tracking_recordview'),
-            31,
-            6,
-            [],
-            [1, 0],
-            [],
-            []
+            $connectionPool->getQueryBuilderForTable('tx_tracking_recordview'),
+            new Demand(31, 6, [], [1, 0])
         );
 
         $result = $subject->getChartData();
@@ -397,4 +380,6 @@ class RecordviewsTest extends TestCase
         ], $result['labels']);
         static::assertCount(2, $result['datasets'][0]['data']);
     }
+
+    // TODO: Add tests for new feature regarding tags
 }

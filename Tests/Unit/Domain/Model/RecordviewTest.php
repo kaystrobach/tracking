@@ -202,27 +202,4 @@ class RecordviewTest extends TestCase
             $subject->getTableName()
         );
     }
-
-    /**
-     * @test
-     */
-    public function returnsOperatingSystem(): void
-    {
-        $language = $this->prophesize(SiteLanguage::class);
-
-        $subject = new Recordview(
-            0,
-            $language->reveal(),
-            new \DateTimeImmutable(),
-            '',
-            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.116 Safari/537.36',
-            10,
-            'sys_category'
-        );
-
-        static::assertSame(
-            'Linux',
-            $subject->getOperatingSystem()
-        );
-    }
 }

@@ -1,9 +1,9 @@
 <?php
 
-namespace DanielSiepmann\Tracking;
+declare(strict_types=1);
 
 /*
- * Copyright (C) 2020 Daniel Siepmann <coding@daniel-siepmann.de>
+ * Copyright (C) 2021 Daniel Siepmann <coding@daniel-siepmann.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,19 +21,37 @@ namespace DanielSiepmann\Tracking;
  * 02110-1301, USA.
  */
 
-final class Extension
+namespace DanielSiepmann\Tracking\Domain\Extractors;
+
+class Tag
 {
-    public const EXT_KEY = 'tracking';
+    /**
+     * E.g. "os" or "bot", some unique identifier.
+     *
+     * @var string
+     */
+    protected $name = '';
 
-    public const LANGUAGE_PATH = 'LLL:EXT:' . self::EXT_KEY . '/Resources/Private/Language/locallang.xlf';
+    /**
+     * @var string
+     */
+    protected $value = '';
 
-    public static function getCompatibleVersionNow(): string
-    {
-        return 'v2.0.0';
+    public function __construct(
+        string $name,
+        string $value
+    ) {
+        $this->name = $name;
+        $this->value = $value;
     }
 
-    public static function getMaximumRowsForUpdate(): int
+    public function getName(): string
     {
-        return 3500;
+        return $this->name;
+    }
+
+    public function getValue(): string
+    {
+        return $this->value;
     }
 }

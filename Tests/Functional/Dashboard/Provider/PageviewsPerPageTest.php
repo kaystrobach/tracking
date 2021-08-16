@@ -21,6 +21,8 @@ namespace DanielSiepmann\Tracking\Tests\Functional\Dashboard\Provider;
  * 02110-1301, USA.
  */
 
+use DanielSiepmann\Tracking\Dashboard\Provider\Demand;
+use DanielSiepmann\Tracking\Dashboard\Provider\Demand\Tag;
 use DanielSiepmann\Tracking\Dashboard\Provider\PageviewsPerPage;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
@@ -46,13 +48,15 @@ class PageviewsPerPageTest extends TestCase
         for ($i = 1; $i <= 10; $i++) {
             $connection->insert('tx_tracking_pageview', [
                 'pid' => $i,
+                'uid' => $i,
                 'crdate' => time(),
             ]);
         }
 
         $subject = new PageviewsPerPage(
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
-            GeneralUtility::makeInstance(PageRepository::class)
+            GeneralUtility::makeInstance(PageRepository::class),
+            new Demand()
         );
 
         $result = $subject->getChartData();
@@ -93,7 +97,8 @@ class PageviewsPerPageTest extends TestCase
 
         $subject = new PageviewsPerPage(
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
-            GeneralUtility::makeInstance(PageRepository::class)
+            GeneralUtility::makeInstance(PageRepository::class),
+            new Demand()
         );
 
         $result = $subject->getChartData();
@@ -128,7 +133,7 @@ class PageviewsPerPageTest extends TestCase
         $subject = new PageviewsPerPage(
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
             GeneralUtility::makeInstance(PageRepository::class),
-            2
+            new Demand(2)
         );
 
         $result = $subject->getChartData();
@@ -156,8 +161,7 @@ class PageviewsPerPageTest extends TestCase
         $subject = new PageviewsPerPage(
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
             GeneralUtility::makeInstance(PageRepository::class),
-            31,
-            4
+            new Demand(31, 4)
         );
 
         $result = $subject->getChartData();
@@ -187,9 +191,7 @@ class PageviewsPerPageTest extends TestCase
         $subject = new PageviewsPerPage(
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
             GeneralUtility::makeInstance(PageRepository::class),
-            31,
-            6,
-            [1, 2, 3, 4, 5, 6]
+            new Demand(31, 6, [1, 2, 3, 4, 5, 6])
         );
 
         $result = $subject->getChartData();
@@ -235,10 +237,7 @@ class PageviewsPerPageTest extends TestCase
         $subject = new PageviewsPerPage(
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
             GeneralUtility::makeInstance(PageRepository::class),
-            31,
-            6,
-            [],
-            [1]
+            new Demand(31, 6, [], [1])
         );
 
         $result = $subject->getChartData();
@@ -282,10 +281,7 @@ class PageviewsPerPageTest extends TestCase
         $subject = new PageviewsPerPage(
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
             GeneralUtility::makeInstance(PageRepository::class),
-            31,
-            6,
-            [],
-            [1, '0']
+            new Demand(31, 6, [], [1, 0])
         );
 
         $result = $subject->getChartData();
@@ -295,5 +291,131 @@ class PageviewsPerPageTest extends TestCase
             'Page 3',
         ], $result['labels']);
         static::assertCount(3, $result['datasets'][0]['data']);
+    }
+
+    /**
+     * @test
+     */
+    public function respectedConfiguredTagRuleToNotIncludeBots(): void
+    {
+        $this->importDataSet('EXT:tracking/Tests/Functional/Fixtures/Pages.xml');
+        $connection = $this->getConnectionPool()->getConnectionForTable('tx_tracking_pageview');
+        for ($i = 1; $i <= 10; $i++) {
+            $connection->insert('tx_tracking_pageview', [
+                'pid' => $i,
+                'uid' => $i,
+                'crdate' => time(),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'pid' => $i,
+                'uid' => $i,
+                'record_uid' => $i,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'bot',
+                'value' => 'no',
+                'crdate' => time(),
+            ]);
+        }
+        for ($i = 11; $i <= 20; $i++) {
+            $connection->insert('tx_tracking_pageview', [
+                'pid' => $i,
+                'uid' => $i,
+                'crdate' => time(),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'pid' => $i,
+                'uid' => $i,
+                'record_uid' => $i,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'bot',
+                'value' => 'yes',
+                'crdate' => time(),
+            ]);
+        }
+
+        $subject = new PageviewsPerPage(
+            GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
+            GeneralUtility::makeInstance(PageRepository::class),
+            new Demand(31, 6, [], [], [
+                Tag::createFromArray([
+                    'name' => 'bot',
+                    'value' => 'no',
+                ]),
+            ])
+        );
+
+        $result = $subject->getChartData();
+        static::assertSame([
+            'Page 10',
+            'Page 9',
+            'Page 8',
+            'Page 7',
+            'Page 6',
+            'Page 5',
+        ], $result['labels']);
+        static::assertCount(6, $result['datasets'][0]['data']);
+    }
+
+    /**
+     * @test
+     */
+    public function respectedConfiguredTagRuleToIncludeBots(): void
+    {
+        $this->importDataSet('EXT:tracking/Tests/Functional/Fixtures/Pages.xml');
+        $connection = $this->getConnectionPool()->getConnectionForTable('tx_tracking_pageview');
+        for ($i = 1; $i <= 10; $i++) {
+            $connection->insert('tx_tracking_pageview', [
+                'pid' => $i,
+                'uid' => $i,
+                'crdate' => time(),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'pid' => $i,
+                'uid' => $i,
+                'record_uid' => $i,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'bot',
+                'value' => 'no',
+                'crdate' => time(),
+            ]);
+        }
+        for ($i = 11; $i <= 20; $i++) {
+            $connection->insert('tx_tracking_pageview', [
+                'pid' => $i,
+                'uid' => $i,
+                'crdate' => time(),
+            ]);
+            $connection->insert('tx_tracking_tag', [
+                'pid' => $i,
+                'uid' => $i,
+                'record_uid' => $i,
+                'record_table_name' => 'tx_tracking_pageview',
+                'name' => 'bot',
+                'value' => 'yes',
+                'crdate' => time(),
+            ]);
+        }
+
+        $subject = new PageviewsPerPage(
+            GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
+            GeneralUtility::makeInstance(PageRepository::class),
+            new Demand(31, 6, [], [], [
+                Tag::createFromArray([
+                    'name' => 'bot',
+                    'value' => 'yes',
+                ]),
+            ])
+        );
+
+        $result = $subject->getChartData();
+        static::assertSame([
+            'Page 20',
+            'Page 19',
+            'Page 18',
+            'Page 17',
+            'Page 16',
+            'Page 15',
+        ], $result['labels']);
+        static::assertCount(6, $result['datasets'][0]['data']);
     }
 }

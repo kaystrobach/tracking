@@ -1,9 +1,9 @@
 <?php
 
-namespace DanielSiepmann\Tracking;
+declare(strict_types=1);
 
 /*
- * Copyright (C) 2020 Daniel Siepmann <coding@daniel-siepmann.de>
+ * Copyright (C) 2021 Daniel Siepmann <coding@daniel-siepmann.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,19 +21,31 @@ namespace DanielSiepmann\Tracking;
  * 02110-1301, USA.
  */
 
-final class Extension
+namespace DanielSiepmann\Tracking\Domain\Extractors\Bots;
+
+use DeviceDetector\Parser\Bot;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
+class CustomBotParser extends Bot
 {
-    public const EXT_KEY = 'tracking';
+    protected $parserName = 'customBots';
 
-    public const LANGUAGE_PATH = 'LLL:EXT:' . self::EXT_KEY . '/Resources/Private/Language/locallang.xlf';
+    /**
+     * @var string
+     */
+    protected $dirName = '';
 
-    public static function getCompatibleVersionNow(): string
+    public function __construct()
     {
-        return 'v2.0.0';
+        parent::__construct();
+
+        $fixtureFile = GeneralUtility::getFileAbsFileName('EXT:tracking/Configuration/Bots.yaml');
+        $this->fixtureFile = basename($fixtureFile);
+        $this->dirName = dirname($fixtureFile);
     }
 
-    public static function getMaximumRowsForUpdate(): int
+    protected function getRegexesDirectory(): string
     {
-        return 3500;
+        return $this->dirName;
     }
 }

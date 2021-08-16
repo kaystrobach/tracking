@@ -21,10 +21,12 @@ namespace DanielSiepmann\Tracking\Tests\Functional\Dashboard\Provider;
  * 02110-1301, USA.
  */
 
+use DanielSiepmann\Tracking\Dashboard\Provider\Demand;
 use DanielSiepmann\Tracking\Dashboard\Provider\NewestPageviews;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase as TestCase;
+
 
 /**
  * @covers DanielSiepmann\Tracking\Dashboard\Provider\NewestPageviews
@@ -51,7 +53,8 @@ class NewestPageviewsTest extends TestCase
         }
 
         $subject = new NewestPageviews(
-            GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview')
+            GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
+            new Demand()
         );
 
         static::assertSame([
@@ -81,7 +84,7 @@ class NewestPageviewsTest extends TestCase
 
         $subject = new NewestPageviews(
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
-            2
+            new Demand(31, 2)
         );
 
         static::assertSame([
@@ -107,8 +110,7 @@ class NewestPageviewsTest extends TestCase
 
         $subject = new NewestPageviews(
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
-            6,
-            [9]
+            new Demand(31, 6, [9])
         );
 
         static::assertSame([
@@ -139,9 +141,7 @@ class NewestPageviewsTest extends TestCase
 
         $subject = new NewestPageviews(
             GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_tracking_pageview'),
-            6,
-            [],
-            [1]
+            new Demand(31, 6, [], [1])
         );
 
         static::assertSame([
@@ -152,4 +152,6 @@ class NewestPageviewsTest extends TestCase
             'Url 1 - User-Agent 1',
         ], $subject->getItems());
     }
+
+    // TODO: Add tests for new feature regarding tags
 }

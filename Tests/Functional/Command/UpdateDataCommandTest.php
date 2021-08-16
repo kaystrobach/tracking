@@ -22,6 +22,7 @@ namespace DanielSiepmann\Tracking\Tests\Functional\Command;
  */
 
 use DanielSiepmann\Tracking\Command\UpdateDataCommand;
+use DanielSiepmann\Tracking\Extension;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase as TestCase;
@@ -44,7 +45,7 @@ class UpdateDataCommandTest extends TestCase
      */
     public function updatesAllEntriesWithMissingOperatingSystem(): void
     {
-        $this->importDataSet('EXT:tracking/Tests/Functional/Fixtures/UpdateDataCommandTest/PageviewsWithMissingOperatingSystem.xml');
+        $this->importDataSet('EXT:tracking/Tests/Functional/Fixtures/UpdateDataCommandTest/WithMissingOperatingSystem.xml');
 
         $subject = GeneralUtility::makeInstance(UpdateDataCommand::class);
         $tester = new CommandTester($subject);
@@ -52,10 +53,104 @@ class UpdateDataCommandTest extends TestCase
 
         static::assertSame(0, $tester->getStatusCode());
 
-        $records = $this->getAllRecords('tx_tracking_pageview');
-        static::assertCount(2, $records);
-        static::assertSame('Linux', $records[0]['operating_system']);
-        static::assertSame('Android', $records[1]['operating_system']);
+        $records = $this->getAllRecords('tx_tracking_tag');
+        self::assertCount(8, $records);
+        self::assertSame([
+            'uid'=> '1',
+            'pid'=> '1',
+            'tstamp'=> '1630649915',
+            'crdate'=> '1630649915',
+            'cruser_id'=> '0',
+            'record_uid' => '1',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'bot',
+            'value' => 'no',
+            'compatible_version' => Extension::getCompatibleVersionNow(),
+        ], $records[0]);
+        self::assertSame([
+            'uid'=> '2',
+            'pid'=> '1',
+            'tstamp'=> '1630649915',
+            'crdate'=> '1630649915',
+            'cruser_id'=> '0',
+            'record_uid' => '1',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'os',
+            'value' => 'Linux',
+            'compatible_version' => Extension::getCompatibleVersionNow(),
+        ], $records[1]);
+        self::assertSame([
+            'uid'=> '3',
+            'pid'=> '1',
+            'tstamp'=> '1630649916',
+            'crdate'=> '1630649916',
+            'cruser_id'=> '0',
+            'record_uid' => '2',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'bot',
+            'value' => 'no',
+            'compatible_version' => Extension::getCompatibleVersionNow(),
+        ], $records[2]);
+        self::assertSame([
+            'uid'=> '4',
+            'pid'=> '1',
+            'tstamp'=> '1630649916',
+            'crdate'=> '1630649916',
+            'cruser_id'=> '0',
+            'record_uid' => '2',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'os',
+            'value' => 'Android',
+            'compatible_version' => Extension::getCompatibleVersionNow(),
+        ], $records[3]);
+        self::assertSame([
+            'uid'=> '5',
+            'pid'=> '1',
+            'tstamp'=> '1630649915',
+            'crdate'=> '1630649915',
+            'cruser_id'=> '0',
+            'record_uid' => '1',
+            'record_table_name' => 'tx_tracking_recordview',
+            'name' => 'bot',
+            'value' => 'no',
+            'compatible_version' => Extension::getCompatibleVersionNow(),
+        ], $records[4]);
+        self::assertSame([
+            'uid'=> '6',
+            'pid'=> '1',
+            'tstamp'=> '1630649915',
+            'crdate'=> '1630649915',
+            'cruser_id'=> '0',
+            'record_uid' => '1',
+            'record_table_name' => 'tx_tracking_recordview',
+            'name' => 'os',
+            'value' => 'Linux',
+            'compatible_version' => Extension::getCompatibleVersionNow(),
+        ], $records[5]);
+        self::assertSame([
+            'uid'=> '7',
+            'pid'=> '1',
+            'tstamp'=> '1630649916',
+            'crdate'=> '1630649916',
+            'cruser_id'=> '0',
+            'record_uid' => '2',
+            'record_table_name' => 'tx_tracking_recordview',
+            'name' => 'bot',
+            'value' => 'no',
+            'compatible_version' => Extension::getCompatibleVersionNow(),
+        ], $records[6]);
+        self::assertSame([
+            'uid'=> '8',
+            'pid'=> '1',
+            'tstamp'=> '1630649916',
+            'crdate'=> '1630649916',
+            'cruser_id'=> '0',
+            'record_uid' => '2',
+            'record_table_name' => 'tx_tracking_recordview',
+            'name' => 'os',
+            'value' => 'Android',
+            'compatible_version' => Extension::getCompatibleVersionNow(),
+        ], $records[7]);
     }
 
     /**
@@ -63,7 +158,7 @@ class UpdateDataCommandTest extends TestCase
      */
     public function doesNotChangeExistingOperatingSystem(): void
     {
-        $this->importDataSet('EXT:tracking/Tests/Functional/Fixtures/UpdateDataCommandTest/PageviewsWithOperatingSystem.xml');
+        $this->importDataSet('EXT:tracking/Tests/Functional/Fixtures/UpdateDataCommandTest/WithOperatingSystem.xml');
 
         $subject = GeneralUtility::makeInstance(UpdateDataCommand::class);
         $tester = new CommandTester($subject);
@@ -71,10 +166,56 @@ class UpdateDataCommandTest extends TestCase
 
         static::assertSame(0, $tester->getStatusCode());
 
-        $records = $this->getAllRecords('tx_tracking_pageview');
-        static::assertCount(2, $records);
-        static::assertSame('Linux', $records[0]['operating_system']);
-        static::assertSame('Android', $records[1]['operating_system']);
+        $records = $this->getAllRecords('tx_tracking_tag');
+        static::assertCount(4, $records);
+        self::assertSame([
+            'uid' => '3',
+            'pid' => '1',
+            'tstamp'=> '1630649915',
+            'crdate'=> '1630649915',
+            'cruser_id' => '0',
+            'record_uid' => '1',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'bot',
+            'value' => 'no',
+            'compatible_version' => Extension::getCompatibleVersionNow(),
+        ], $records[0]);
+        self::assertSame([
+            'uid' => '4',
+            'pid' => '1',
+            'tstamp'=> '1630649915',
+            'crdate'=> '1630649915',
+            'cruser_id' => '0',
+            'record_uid' => '1',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'os',
+            'value' => 'Linux',
+            'compatible_version' => Extension::getCompatibleVersionNow(),
+        ], $records[1]);
+        self::assertSame([
+            'uid' => '5',
+            'pid' => '1',
+            'tstamp'=> '1630649916',
+            'crdate'=> '1630649916',
+            'cruser_id' => '0',
+            'record_uid' => '2',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'bot',
+            'value' => 'no',
+            'compatible_version' => Extension::getCompatibleVersionNow(),
+        ], $records[2]);
+        self::assertSame([
+            'uid' => '6',
+            'pid' => '1',
+            'tstamp'=> '1630649916',
+            'crdate'=> '1630649916',
+            'cruser_id' => '0',
+            'record_uid' => '2',
+            'record_table_name' => 'tx_tracking_pageview',
+            'name' => 'os',
+            'value' => 'Android',
+            'compatible_version' => Extension::getCompatibleVersionNow(),
+        ], $records[3]);
     }
 
     /**
@@ -91,6 +232,29 @@ class UpdateDataCommandTest extends TestCase
         static::assertSame(0, $tester->getStatusCode());
 
         $records = $this->getAllRecords('tx_tracking_pageview');
+        static::assertCount(0, $records);
+
+        $records = $this->getAllRecords('tx_tracking_tag');
+        static::assertCount(0, $records);
+    }
+
+    /**
+     * @test
+     */
+    public function doesNothingIfAllRecordsAreCompatible(): void
+    {
+        $this->importDataSet('EXT:tracking/Tests/Functional/Fixtures/UpdateDataCommandTest/WithCompatibleVersion.xml');
+
+        $subject = GeneralUtility::makeInstance(UpdateDataCommand::class);
+        $tester = new CommandTester($subject);
+        $tester->execute([], ['capture_stderr_separately' => true]);
+
+        static::assertSame(0, $tester->getStatusCode());
+
+        $records = $this->getAllRecords('tx_tracking_pageview');
+        static::assertCount(0, $records);
+
+        $records = $this->getAllRecords('tx_tracking_tag');
         static::assertCount(0, $records);
     }
 }

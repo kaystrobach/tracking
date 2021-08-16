@@ -54,6 +54,7 @@ class RecordviewTest extends TestCase
      */
     public function trackedWhenAllowed(): void
     {
+        $this->setUpBackendUserFromFixture(1);
         $request = new InternalRequest();
         $request = $request->withPageId(1);
         $request = $request->withQueryParameter('topic_id', 1);
@@ -68,10 +69,24 @@ class RecordviewTest extends TestCase
         self::assertSame('1', (string)$records[0]['uid']);
         self::assertSame('http://localhost/?id=1&topic_id=1', $records[0]['url']);
         self::assertSame('Mozilla/5.0 (Macintosh; Intel Mac OS X x.y; rv:42.0) Gecko/20100101 Firefox/42.0', $records[0]['user_agent']);
-        self::assertSame('Macintosh', $records[0]['operating_system']);
         self::assertSame('sys_category_1', $records[0]['record']);
         self::assertSame('1', (string)$records[0]['record_uid']);
         self::assertSame('sys_category', $records[0]['record_table_name']);
+
+        $records = $this->getAllRecords('tx_tracking_tag');
+        self::assertCount(4, $records);
+
+        self::assertSame('1', $records[2]['pid']);
+        self::assertSame('1', $records[2]['record_uid']);
+        self::assertSame('tx_tracking_recordview', $records[2]['record_table_name']);
+        self::assertSame('bot', $records[2]['name']);
+        self::assertSame('no', $records[2]['value']);
+
+        self::assertSame('1', $records[3]['pid']);
+        self::assertSame('1', $records[3]['record_uid']);
+        self::assertSame('tx_tracking_recordview', $records[3]['record_table_name']);
+        self::assertSame('os', $records[3]['name']);
+        self::assertSame('Macintosh', $records[3]['value']);
     }
 
     /**

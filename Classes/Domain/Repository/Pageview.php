@@ -23,6 +23,7 @@ namespace DanielSiepmann\Tracking\Domain\Repository;
 
 use DanielSiepmann\Tracking\Domain\Model\Pageview as Model;
 use DanielSiepmann\Tracking\Domain\Pageview\Factory;
+use DanielSiepmann\Tracking\Extension;
 use TYPO3\CMS\Core\Database\Connection;
 
 class Pageview
@@ -37,33 +38,49 @@ class Pageview
      */
     private $factory;
 
+    /**
+     * @var Tag
+     */
+    private $tagRepository;
+
     public function __construct(
         Connection $connection,
-        Factory $factory
+        Factory $factory,
+        Tag $tagRepository
     ) {
         $this->connection = $connection;
         $this->factory = $factory;
+        $this->tagRepository = $tagRepository;
     }
 
-    public function countAll(): int
-    {
-        $result = $this->connection->createQueryBuilder()
-            ->count('uid')
-            ->from('tx_tracking_pageview')
-            ->execute()
-            ->fetchColumn();
-
-        if (is_numeric($result)) {
-            return (int) $result;
-        }
-
-        return 0;
-    }
-
-    public function findAll(): \Generator
+    public function findLegacyCount(): int
     {
         $queryBuilder = $this->connection->createQueryBuilder();
-        $pageViews = $queryBuilder->select('*')->from('tx_tracking_pageview')->execute();
+        $queryBuilder->count('*');
+        $queryBuilder->from('tx_tracking_pageview');
+        $queryBuilder->where($queryBuilder->expr()->neq('compatible_version', $queryBuilder->createNamedParameter(Extension::getCompatibleVersionNow())));
+        $queryBuilder->setMaxResults(Extension::getMaximumRowsForUpdate());
+
+        $pageViews = $queryBuilder->execute()->fetchColumn();
+        if (is_numeric($pageViews) === false) {
+            return 0;
+        }
+
+        if ($pageViews > Extension::getMaximumRowsForUpdate()) {
+            return Extension::getMaximumRowsForUpdate();
+        }
+        return (int) $pageViews;
+    }
+
+    public function findLegacy(): \Generator
+    {
+        $queryBuilder = $this->connection->createQueryBuilder();
+        $queryBuilder->select('*');
+        $queryBuilder->from('tx_tracking_pageview');
+        $queryBuilder->where($queryBuilder->expr()->neq('compatible_version', $queryBuilder->createNamedParameter(Extension::getCompatibleVersionNow())));
+        $queryBuilder->setMaxResults(Extension::getMaximumRowsForUpdate());
+
+        $pageViews = $queryBuilder->execute();
 
         while ($pageView = $pageViews->fetch()) {
             if (is_array($pageView) === false) {
@@ -85,6 +102,8 @@ class Pageview
             $this->getFieldsFromModel($pageview),
             ['uid' => $pageview->getUid()]
         );
+
+        $this->tagRepository->updateForPageview($pageview);
     }
 
     public function add(Model $pageview): void
@@ -105,7 +124,12 @@ class Pageview
             'sys_language_uid' => $pageview->getLanguage()->getLanguageId(),
             'url' => $pageview->getUrl(),
             'user_agent' => $pageview->getUserAgent(),
-            'operating_system' => $pageview->getOperatingSystem(),
+            'compatible_version' => Extension::getCompatibleVersionNow(),
         ];
+
+        $this->tagRepository->addForPageview(
+            $pageview,
+            (int) $this->connection->lastInsertId('tx_tracking_pageview')
+        );
     }
 }

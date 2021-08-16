@@ -1,6 +1,8 @@
 <?php
 
-namespace DanielSiepmann\Tracking\Domain\Model;
+namespace DanielSiepmann\Tracking\Domain\Extractors;
+
+use DanielSiepmann\Tracking\Domain\Model\Pageview;
 
 /*
  * Copyright (C) 2020 Daniel Siepmann <coding@daniel-siepmann.de>
@@ -21,7 +23,13 @@ namespace DanielSiepmann\Tracking\Domain\Model;
  * 02110-1301, USA.
  */
 
-interface HasUserAgent
+/**
+ * API to extract further info out of an model.
+ */
+interface PageviewExtractor
 {
-    public function getUserAgent(): string;
+    /**
+     * @return Tag[]
+     */
+    public function extractTagFromPageview(Pageview $pageview): array;
 }
